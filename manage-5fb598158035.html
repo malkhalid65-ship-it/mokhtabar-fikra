@@ -1,0 +1,43 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إدارة مواعيد مختبر فكرة مشروعك</title><style>
+body{font-family:Arial,Tahoma,sans-serif;background:#f4f7f6;color:#173f35;margin:0}.wrap{max-width:850px;margin:auto;padding:18px}
+.card{background:#fff;margin:14px 0;padding:20px;border-radius:15px;box-shadow:0 2px 12px #0001}.hero{background:#173f35;color:white;padding:25px;border-radius:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+input,select{width:100%;padding:10px;margin:5px 0 12px;border:1px solid #ccd8d3;border-radius:8px}button{background:#f2b705;color:#173f35;border:0;padding:12px 18px;border-radius:8px;font-weight:800;cursor:pointer}
+.danger{background:#f7e2e2;color:#8b2626}.slot{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px;border:1px solid #dce5e1;border-radius:9px;margin:6px 0}.note{font-size:13px;color:#65736d}
+</style></head><body><div class=wrap><div class=hero><svg viewBox="0 0 120 120" width="112" height="112" aria-label="شعار مختبر فكرة مشروعك" role="img">
+<circle cx="60" cy="60" r="51" fill="white" stroke="#0d5a3e" stroke-width="7"/>
+<path d="M31 86 C48 77,58 62,68 43" fill="none" stroke="#0d5a3e" stroke-width="8" stroke-linecap="round"/>
+<path d="M64 42 L83 31 L80 54 Z" fill="#0d5a3e"/>
+<path d="M46 72 C30 73,23 65,22 54 C36 54,47 58,46 72Z" fill="#0d5a3e"/>
+<path d="M49 67 C49 50,58 42,68 39 C69 53,63 65,49 67Z" fill="#0d5a3e"/>
+</svg><h1>إدارة مواعيد مختبر فكرة مشروعك</h1><p>المستشار محمد الخالد</p><p><b>وثيقة العمل رقم FL-654884630</b></p><p>التعديلات هنا مصممة للحفظ المركزي وإظهارها فورًا للعملاء.</p></div>
+<div class=card><label>مفتاح الإدارة</label><input id=key type=password placeholder="مفتاح الإدارة الخاص"><button onclick=loadCfg()>تحميل الإعدادات الحالية</button></div>
+<div class=card><h2>المواعيد الأسبوعية</h2><div class=grid><div><h3>الفردية</h3><input id=it></div><div><h3>الجماعية</h3><input id=gt></div></div></div>
+<div class=card><h2>إضافة موعد خاص</h2><div class=grid><div><select id=type><option value=individual>فردية</option><option value=group>جماعية</option><option value=both>كلاهما</option></select></div><div><input id=date type=date></div><div><input id=time type=time value="19:00"></div><div><button onclick=addSlot()>إضافة</button></div></div><div id=slots></div></div>
+<div class=card><h2>تعطيل تاريخ كامل</h2><div class=grid><div><input id=dd type=date></div><div><button class=danger onclick=disableDate()>تعطيل</button></div></div><div id=disabled></div></div>
+<div class=card><button onclick=saveCfg()>حفظ ونشر فورًا للعملاء</button><div id=status class=note></div></div>
+<div class=card><h2>جدول الحجوزات</h2><p class=note>يعرض الحجوزات المؤكدة. عند إلغاء حجز يعود الموعد متاحًا للعميل.</p><button onclick="loadBookings()">تحديث جدول الحجوزات</button><div id="bookings"></div></div>
+</div><script>
+let cfg={"timezone": "Asia/Riyadh", "individual": {"days": [0, 3], "times": ["19:00", "20:00", "21:00"], "duration_minutes": 45}, "group": {"days": [0, 3], "times": ["19:00", "20:30"], "duration_minutes": 90}, "custom_slots": [], "disabled_dates": []};
+function render(){it.value=cfg.individual.times.join(',');gt.value=cfg.group.times.join(',');slots.innerHTML=(cfg.custom_slots||[]).map((s,i)=>`<div class=slot><span>${s.date} — ${s.time} — ${s.type}</span><button class=danger onclick="cfg.custom_slots.splice(${i},1);render()">حذف</button></div>`).join('');disabled.innerHTML=(cfg.disabled_dates||[]).map((d,i)=>`<div class=slot><span>${d}</span><button onclick="cfg.disabled_dates.splice(${i},1);render()">تفعيل</button></div>`).join('')}
+async function loadCfg(){let r=await fetch('/api/schedule');let j=await r.json();cfg=j.schedule;render();status.textContent=j.configured?'التخزين المركزي متصل.':'التخزين المركزي لم يُفعّل بعد.'}
+function addSlot(){if(!date.value||!time.value)return alert('اختر التاريخ والوقت');cfg.custom_slots.push({type:type.value,date:date.value,time:time.value,active:true});render()}
+function disableDate(){if(dd.value&&!cfg.disabled_dates.includes(dd.value))cfg.disabled_dates.push(dd.value);render()}
+async function saveCfg(){cfg.individual.times=it.value.split(',').map(x=>x.trim()).filter(Boolean);cfg.group.times=gt.value.split(',').map(x=>x.trim()).filter(Boolean);let r=await fetch('/api/schedule',{method:'POST',headers:{'Content-Type':'application/json','x-admin-key':key.value},body:JSON.stringify(cfg)});let j=await r.json();status.textContent=j.ok?'تم الحفظ المركزي ونشر المواعيد فورًا.':j.error==='storage_not_configured'?'التخزين المركزي غير مفعّل على Vercel بعد.':j.error==='unauthorized'?'مفتاح الإدارة غير صحيح أو غير مفعّل.':'تعذر الحفظ.'}
+async function loadBookings(){
+  if(!key.value){bookings.innerHTML='<p class=note>أدخل مفتاح الإدارة أولاً.</p>';return}
+  let r=await fetch('/api/bookings',{headers:{'x-admin-key':key.value}});
+  let j=await r.json();
+  if(!r.ok){bookings.innerHTML='<p class=note>تعذر تحميل الحجوزات أو التخزين غير مفعّل.</p>';return}
+  window._bookings=j.bookings||[];
+  bookings.innerHTML=window._bookings.map((b,i)=>`<div class=slot><span><b>${b.date} — ${b.time}</b><br>${b.type==='individual'?'فردية':'جماعية'} — ${b.name} — ${b.phone}</span><button class=danger onclick="cancelBooking(${i})">إلغاء وإعادة فتح الموعد</button></div>`).join('')||'<p class=note>لا توجد حجوزات مؤكدة.</p>';
+}
+async function cancelBooking(i){
+  const id=window._bookings?.[i]?.id;if(!id)return;
+  if(!confirm('إلغاء الحجز وإعادة فتح الموعد؟'))return;
+  let r=await fetch('/api/bookings',{method:'DELETE',headers:{'Content-Type':'application/json','x-admin-key':key.value},body:JSON.stringify({id})});
+  if(r.ok)loadBookings();else alert('تعذر إلغاء الحجز');
+}
+render();loadCfg();
+</script></body></html>
