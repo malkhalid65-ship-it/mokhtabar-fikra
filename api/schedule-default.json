@@ -1,0 +1,28 @@
+{
+  "timezone": "Asia/Riyadh",
+  "individual": {
+    "days": [
+      0,
+      3
+    ],
+    "times": [
+      "19:00",
+      "20:00",
+      "21:00"
+    ],
+    "duration_minutes": 45
+  },
+  "group": {
+    "days": [
+      0,
+      3
+    ],
+    "times": [
+      "19:00",
+      "20:30"
+    ],
+    "duration_minutes": 90
+  },
+  "custom_slots": [],
+  "disabled_dates": []
+}
